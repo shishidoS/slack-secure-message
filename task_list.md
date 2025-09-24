@@ -1,10 +1,10 @@
-# 開発タスクリスト ✅
+# 開発タスクリスト ✅機能部分
 
 ## バックエンド
-- [ ] Expressサーバーの基本設定
-- [ ] SQLiteの接続とテーブル作成
-- [ ] `/api/messages` API実装
-- [ ] `/api/auth` API実装
+- [✅ ] Expressサーバーの基本設定
+- [✅ ] SQLiteの接続とテーブル作成
+- [✅ ] `/api/messages` API実装
+- [✅ ] `/api/auth` API実装
 
 ## フロントエンド
 - [ ] パスワード入力画面の作成
