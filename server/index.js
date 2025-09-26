@@ -2,10 +2,12 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose(); //.verbose()は詳細なエラーメッセージを表示してくれる
 const crypto = require('crypto');
+const cors = require('cors');
 
 // Expressを使いサーバーを作成
 const app = express();
 app.use(express.json()); // JSON形式のリクエストを受信可能にする
+app.use(cors()); // CORSを有効にする
 
 // サーバーがリクエストを受けるポート番号設定
 const PORT = 3001;

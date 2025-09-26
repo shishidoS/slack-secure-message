@@ -36,3 +36,43 @@
     transform: rotate(360deg);
   }
 }
+
+/* App.css の一番下に追加 */
+
+form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+input {
+  padding: 8px;
+  font-size: 1rem;
+}
+
+button {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.message-box, .error-box {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 5px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.message-box {
+  background-color: #e0f7fa;
+  border: 1px solid #00796b;
+}
+
+.error-box {
+  background-color: #ffcdd2;
+  border: 1px solid #c62828;
+  color: #c62828;
+}
