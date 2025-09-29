@@ -3,13 +3,24 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
 
 // Expressを使いサーバーを作成
 const app = express();
 app.use(cors()); // CORSを有効にする
 app.use(express.json()); // JSON形式のリクエストを受信可能にする
 app.use(express.urlencoded({ extended: true })); // Slackからのurlencoded形式も受信可能にする
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // 保存先フォルダ
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
 // サーバーがリクエストを受けるポート番号設定
 const PORT = 3001;
 
@@ -29,6 +40,7 @@ db.serialize(() => {
     message_content TEXT,
     access_path TEXT UNIQUE,
     password_plain TEXT,
+    file_path TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`, (err) => {
     if (err) {
@@ -44,8 +56,8 @@ app.get('/', (req, res) => {
 });
 
 // [POST] /api/messages Slackからのリクエストを処理するAPI
-app.post('/api/messages', (req, res) => {
-  // 1. Slackから送られてきたデータを取り出す
+app.post('/api/messages', upload.single('file'),(req, res) => {
+  // Slackから送られてきたデータを取り出す
   const { user_name, text } = req.body;
 
   // Slackからのデータ形式では、宛先とメッセージは text の中に入っている
@@ -53,20 +65,21 @@ app.post('/api/messages', (req, res) => {
   // ここでは簡単化のため、text全体をメッセージとして扱う
   const recipient_id = user_name; // コマンド実行者
   const message_content = text;   // メッセージ本文
+  const file_path = req.file ? req.file.path : null;
 
-  // 2. データが空でないか確認する
+  // データが空でないか確認する
   if (!recipient_id || !message_content) {
     return res.status(400).send('ユーザー名とメッセージが必要です。');
   }
 
-  // 3. URLパスとパスワードを生成する
+  //  URLパスとパスワードを生成する
   const access_path = crypto.randomBytes(8).toString('hex');
   const password_plain = crypto.randomBytes(4).toString('hex');
 
-  // 4. データベースに情報を保存する
-  const sql = `INSERT INTO secure_messages (recipient_id, message_content, access_path, password_plain) VALUES (?, ?, ?, ?)`;
+  // データベースに情報を保存する
+ const sql = `INSERT INTO secure_messages (recipient_id, message_content, access_path, password_plain, file_path) VALUES (?, ?, ?, ?, ?)`;
 
-  db.run(sql, [recipient_id, message_content, access_path, password_plain], function(err) {
+  db.run(sql, [recipient_id, message_content, access_path, password_plain,file_path], function(err) {
     if (err) {
       console.error(err.message);
       return res.status(500).send('データベースエラーが発生しました。');
@@ -77,13 +90,13 @@ app.post('/api/messages', (req, res) => {
     // 5. 成功したら、コマンド実行者にだけ見えるメッセージでURLとパスワードを返す
     res.json({
       response_type: 'ephemeral',
-      text: `メッセージを作成しました！\nURL: http://3.27.234.148:3000/messages/${access_path}\nPassword: ${password_plain}`
+      text: `メッセージを作成しました！\nURL: http://localhost:3000/messages/${access_path}\nPassword: ${password_plain}`
     });
   });
 });
 
 // [POST] /api/auth メッセージ取得のための認証API
-app.post('/api/auth', (req, res) => {
+app.post('/api/auth', upload.none(), (req, res) => {
   const { access_path, password_plain } = req.body;
   const sql = `SELECT * FROM secure_messages WHERE access_path = ?`;
 
@@ -100,9 +113,15 @@ app.post('/api/auth', (req, res) => {
 
     res.json({
       status: '成功しました。',
-      message_content: row.message_content
+      message_content: row.message_content,
+      file_path: row.file_path
     });
   });
+});
+
+app.post('/api/upload', (req, res) => {
+  res.send('アップロード成功しました！');
+
 });
 
 // 設定したPORT番号でサーバーを起動、リクエストを待つ
