@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-
 // Expressを使いサーバーを作成
 const app = express();
 app.use(cors()); // CORSを有効にする
